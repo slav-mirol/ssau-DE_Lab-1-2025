@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os
 import io
 from datetime import datetime, timedelta
@@ -7,38 +9,39 @@ import requests
 
 from prefect import flow, task
 from prefect.blocks.system import Secret
-from prefect.blocks.notifications import NotificationBlock
 
 from minio import Minio
-from minio.error import S3Error
 
 import clickhouse_connect
 
-from dotenv import load_dotenv
+MINIO_ENDPOINT = Secret.load("minio-endpoint").get()
+MINIO_ACCESS_KEY = Secret.load("minio-access-key").get()
+MINIO_SECRET_KEY = Secret.load("minio-secret-key").get()
+MINIO_BUCKET = Secret.load("minio-bucket").get()
 
-load_dotenv()
+CLICKHOUSE_HOST = Secret.load("clickhouse-host").get()
+CLICKHOUSE_PORT = int(Secret.load("clickhouse-port").get())
+CLICKHOUSE_USER = Secret.load("clickhouse-user").get()
+CLICKHOUSE_PASSWORD = Secret.load("clickhouse-password").get() or ""
+CLICKHOUSE_DATABASE = Secret.load("clickhouse-database").get()
 
-# MinIO
+TELEGRAM_BOT_TOKEN = Secret.load("telegram-bot-token").get()
+TELEGRAM_CHAT_ID = Secret.load("telegram-chat-id").get()
+
 minio_client = Minio(
-    os.getenv("MINIO_ENDPOINT"),
-    access_key=os.getenv("MINIO_ACCESS_KEY"),
-    secret_key=os.getenv("MINIO_SECRET_KEY"),
+    MINIO_ENDPOINT,
+    access_key=MINIO_ACCESS_KEY,
+    secret_key=MINIO_SECRET_KEY,
     secure=False
 )
 
-# ClickHouse
-# Подключаемся через HTTP (порт 8123)
 ch_client = clickhouse_connect.get_client(
-    host=os.getenv("CLICKHOUSE_HOST", "localhost"),
-    port=int(os.getenv("CLICKHOUSE_PORT", 8123)),
-    username=os.getenv("CLICKHOUSE_USER", "default"),
-    password=os.getenv("CLICKHOUSE_PASSWORD", "pass123"),
-    database=os.getenv("CLICKHOUSE_DATABASE", "weather")
+    host=CLICKHOUSE_HOST,
+    port=CLICKHOUSE_PORT,
+    user=CLICKHOUSE_USER,
+    password=CLICKHOUSE_PASSWORD,
+    database=CLICKHOUSE_DATABASE
 )
-
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-
 
 @task(name="Получить прогноз погоды", retries=3, retry_delay_seconds=10)
 def fetch_weather_data(cities: List[str]) -> Dict[str, Any]:
