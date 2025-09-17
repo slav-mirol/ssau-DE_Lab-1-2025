@@ -1,0 +1,38 @@
+# Welcome to your prefect.yaml file! You can use this file for storing and managing
+# configuration for deploying your flows. We recommend committing this file to source
+# control along with your flow code.
+
+# Generic metadata about this project
+name: ssau-DE_Lab-1-2025
+prefect-version: 3.4.18
+
+# build section allows you to manage and build docker images
+build: null
+
+# push section allows you to manage if and how this project is uploaded to remote locations
+push: null
+
+# pull section allows you to provide instructions for cloning this project in remote locations
+pull:
+- prefect.deployments.steps.git_clone:
+    repository: https://github.com/slav-mirol/ssau-DE_Lab-1-2025
+    branch: main
+
+# the deployments section allows you to provide configuration for deploying flows
+deployments:
+- name: weather_daily_15-45_deployment
+  version: null
+  tags: []
+  concurrency_limit: null
+  description: "\u041E\u0441\u043D\u043E\u0432\u043D\u043E\u0439 ETL-\u043F\u0430\u0439\
+    \u043F\u043B\u0430\u0439\u043D \u043F\u043E\u0433\u043E\u0434\u044B"
+  entrypoint: weather_etl.py:weather_etl
+  parameters: {}
+  work_pool:
+    name: weather-pool
+    work_queue_name: null
+    job_variables: {}
+  schedules:
+  - cron: 45 14 * * *
+    timezone: Europe/Moscow
+    day_or: true
