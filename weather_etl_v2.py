@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-import os
 import io
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
@@ -43,6 +40,7 @@ ch_client = clickhouse_connect.get_client(
     database=CLICKHOUSE_DATABASE
 )
 
+
 @task(name="Получить прогноз погоды", retries=3, retry_delay_seconds=10)
 def fetch_weather_data(cities: List[str]) -> Dict[str, Any]:
     """Получает прогноз на завтра для списка городов"""
@@ -50,7 +48,7 @@ def fetch_weather_data(cities: List[str]) -> Dict[str, Any]:
     tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
     
     for city in cities:
-        # Координаты городов (можно вынести в словарь)
+        # Координаты городов
         coords = {
             "Москва": {"lat": 55.7558, "lon": 37.6176},
             "Самара": {"lat": 53.2007, "lon": 50.15}
@@ -80,7 +78,7 @@ def fetch_weather_data(cities: List[str]) -> Dict[str, Any]:
 @task(name="Сохранить JSON в MinIO")
 def save_raw_to_minio(weather_data: Dict[str, Any]):
     """Сохраняет сырые данные в MinIO как JSON"""
-    bucket_name = os.getenv("MINIO_BUCKET")
+    bucket_name = MINIO_BUCKET
     
     # Создать бакет, если не существует
     if not minio_client.bucket_exists(bucket_name):
@@ -102,12 +100,12 @@ def save_raw_to_minio(weather_data: Dict[str, Any]):
 
 @task(name="Нормализовать почасовые данные")
 def transform_hourly_data(weather_data: Dict[str, Any]) -> List[Dict]:
-    """Извлекает почасовые данные для таблицы weather_hourly"""
+    """Retrieves hourly data for the table weather_hourly"""
     hourly_records = []
     tomorrow = (datetime.now() + timedelta(days=1)).date()
 
     for city, data in weather_data.items():
-        hourly = data.get("hourly", {})
+        hourly = data.get("houtly", {})
         times = hourly.get("time", [])
         temps = hourly.get("temperature_2m", [])
         precip = hourly.get("precipitation", [])
@@ -123,12 +121,10 @@ def transform_hourly_data(weather_data: Dict[str, Any]) -> List[Dict]:
                     "temperature": temps[i] if i < len(temps) else None,
                     "precipitation": precip[i] if i < len(precip) else None,
                     "wind_speed": wind_speed[i] if i < len(wind_speed) else None,
-                    "wind_direction": str(wind_dir[i]) if i < len(wind_dir) else None
+                    "wind_direction": wind_dir[i] if i < len(wind_dir) else None,
                 }
                 hourly_records.append(record)
-    
     return hourly_records
-
 
 @task(name="Агрегировать дневные данные")
 def transform_daily_data(weather_data: Dict[str, Any]) -> List[Dict]:
@@ -137,7 +133,7 @@ def transform_daily_data(weather_data: Dict[str, Any]) -> List[Dict]:
     tomorrow = (datetime.now() + timedelta(days=1)).date()
 
     for city, data in weather_data.items():
-        hourly = data.get("hourly", {})
+        hourly = data.get("houtly", {})
         times = hourly.get("time", [])
         temps = hourly.get("temperature_2m", [])
         precip = hourly.get("precipitation", [])
@@ -285,5 +281,5 @@ def weather_etl(cities: List[str] = ["Москва", "Самара"]):
     print("Пайплайн завершён успешно")
 
 # Для тестирования чисто etl-пайплайна, без prefect
-#if __name__ == "__main__":
-#    weather_etl()
+if __name__ == "__main__":
+    weather_etl()
