@@ -121,7 +121,7 @@ def transform_hourly_data(weather_data: Dict[str, Any]) -> List[Dict]:
                     "temperature": temps[i] if i < len(temps) else None,
                     "precipitation": precip[i] if i < len(precip) else None,
                     "wind_speed": wind_speed[i] if i < len(wind_speed) else None,
-                    "wind_direction": wind_dir[i] if i < len(wind_dir) else None,
+                    "wind_direction": str(wind_dir[i]) if i < len(wind_dir) and wind_dir[i] is not None else "",
                 }
                 hourly_records.append(record)
     return hourly_records
