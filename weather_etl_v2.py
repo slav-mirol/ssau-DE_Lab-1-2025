@@ -105,7 +105,7 @@ def transform_hourly_data(weather_data: Dict[str, Any]) -> List[Dict]:
     tomorrow = (datetime.now() + timedelta(days=1)).date()
 
     for city, data in weather_data.items():
-        hourly = data.get("houtly", {})
+        hourly = data.get("hourly", {})
         times = hourly.get("time", [])
         temps = hourly.get("temperature_2m", [])
         precip = hourly.get("precipitation", [])
@@ -133,7 +133,7 @@ def transform_daily_data(weather_data: Dict[str, Any]) -> List[Dict]:
     tomorrow = (datetime.now() + timedelta(days=1)).date()
 
     for city, data in weather_data.items():
-        hourly = data.get("houtly", {})
+        hourly = data.get("hourly", {})
         times = hourly.get("time", [])
         temps = hourly.get("temperature_2m", [])
         precip = hourly.get("precipitation", [])
